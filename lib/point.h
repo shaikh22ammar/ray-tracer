@@ -2,8 +2,11 @@
 #define POINT3_H
 
 #include <stdio.h>
+#include <float.h>
 
 typedef float scalar;
+#define SCALAR_MAX FLT_MAX
+
 struct Point {scalar x; scalar y; scalar z;};
 typedef struct Point Point;
 typedef Point Vector;
