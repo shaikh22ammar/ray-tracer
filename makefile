@@ -1,5 +1,5 @@
 
-mysky: mysky.o lib/point.o lib/ray.o lib/sphere.o lib/hittable_list.o lib/interval.o
+mysky: mysky.o lib/point.o lib/ray.o lib/sphere.o lib/hittable_list.o lib/interval.o lib/camera.h
 	clang mysky.o lib/point.o lib/ray.o lib/interval.o lib/hittable_list.o lib/sphere.o -o mysky.out -lm
 
 mysky.o: mysky.c lib/point.h lib/hittable.h lib/sphere.h lib/interval.h lib/ray.h lib/camera.h

@@ -32,6 +32,8 @@ struct Camera {
 
 	int samples_per_pixel;
 	scalar sample_scale;
+
+	int max_reflection_depth;
 };
 
 struct Camera make_camera (int image_width, scalar aspect_ratio, scalar focal_length, scalar viewport_height, Point camera_center) {
@@ -73,6 +75,7 @@ struct Camera make_camera (int image_width, scalar aspect_ratio, scalar focal_le
 
 	cam.samples_per_pixel = 100;
 	cam.sample_scale = 1.0 / cam.samples_per_pixel;
+	cam.max_reflection_depth = 50;
 	return cam;
 }
 
@@ -97,22 +100,16 @@ Ray get_ray(struct Camera *cam, int i, int j) {
 	return make_ray(cam->camera_center, subtract_points(sampled_pixel, cam->camera_center));
 }
 
-Color ray_color(Ray r, struct Hittable_list *world) {
+Color ray_color(Ray r, struct Hittable_list *world, int depth) {
+	if (depth <= 0) 
+		return make_color(0,0,0);
 	struct Hit_record rec;
-	if (ray_hits_hittable_list(r, positive_interval, (void *) world, &rec)) {
-		fprintf(log_file, "Ray has hit at (%f,%f,%f) with normal (%f,%f,%f)\n", 
-				rec.ray_hit_point.x, 
-				rec.ray_hit_point.y, 
-				rec.ray_hit_point.z, 
-				rec.normal.x, 
-				rec.normal.y, 
-				rec.normal.z);
-		Color ray_color = scale_point(0.5, add_points(rec.normal, make_color(1,1,1)));
-		fprintf(log_file, "Ray color is (%f,%f,%f)\n", 
-				ray_color.x,
-				ray_color.y,
-				ray_color.z);
-		return ray_color;
+	if (ray_hits_hittable_list(r, make_interval(0.001, SCALAR_MAX), (void *) world, &rec)) {
+		Vector direction = random_unit_vector_on_hemisphere(rec.normal);
+		return scale_point(0.5,	
+				ray_color(
+					make_ray(rec.ray_hit_point, direction), 
+					world, depth - 1));
 	}
 	
 	// sky
@@ -121,9 +118,11 @@ Color ray_color(Ray r, struct Hittable_list *world) {
 	Color white = make_color(1, 1, 1);
 	Vector unit_direction = unit_point(r.direction);
 	scalar y_value = (unit_direction.y + 1.0)*0.5;
-	return add_points(
-			scale_point(1.0 - y_value, white),
-			scale_point(y_value, blue));
+	Color ray_col = 
+	add_points(
+		scale_point(1.0 - y_value, white),
+		scale_point(y_value, blue));
+	return ray_col;
 }
 
 void render_camera(struct Camera *cam, struct Hittable_list *world) {
@@ -134,7 +133,7 @@ void render_camera(struct Camera *cam, struct Hittable_list *world) {
 			Color pixel_color = make_point(0,0,0);
 			for (int sample = 0; sample < cam -> samples_per_pixel; sample++) {
 				Ray r = get_ray(cam, i, j);
-				pixel_color = add_points(pixel_color, ray_color(r, world));
+				pixel_color = add_points(pixel_color, ray_color(r, world, cam->max_reflection_depth));
 			}
 			write_color(output_file, scale_point(cam->sample_scale, pixel_color));
 		}

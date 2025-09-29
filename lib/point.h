@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <float.h>
 
+//typedef double scalar;
+//#define SCALAR_MAX DBL_MAX
 typedef float scalar;
 #define SCALAR_MAX FLT_MAX
 

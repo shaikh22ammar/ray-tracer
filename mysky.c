@@ -24,7 +24,8 @@ int main() {
 
 	// render
 	output_file = fopen("mysky.ppm", "w");
-	log_file = fopen("mysky.log", "w");
+	log_file = stdout;
+	//log_file = fopen("mysky.log", "w");
 
 	struct Camera cam = make_camera_defaults(400, (scalar) 16.0/9.0);
 	render_camera(&cam, world);
