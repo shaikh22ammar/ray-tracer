@@ -3,6 +3,7 @@
 
 #include "stdio.h"
 #include "point.h"
+#include "random.h"
 
 extern FILE *log_file;
 extern FILE *output_file;
@@ -28,6 +29,9 @@ struct Camera {
 	// pixel coordinates
 	Point viewport_upperleft;
 	Point pixel_00;
+
+	int samples_per_pixel;
+	scalar sample_scale;
 };
 
 struct Camera make_camera (int image_width, scalar aspect_ratio, scalar focal_length, scalar viewport_height, Point camera_center) {
@@ -66,6 +70,9 @@ struct Camera make_camera (int image_width, scalar aspect_ratio, scalar focal_le
 			cam.viewport_upperleft,
 			scale_point(0.5, cam.pixel_delta_h)),
 			scale_point(0.5, cam.pixel_delta_v));
+
+	cam.samples_per_pixel = 100;
+	cam.sample_scale = 1.0 / cam.samples_per_pixel;
 	return cam;
 }
 
@@ -73,6 +80,21 @@ struct Camera make_camera (int image_width, scalar aspect_ratio, scalar focal_le
 
 struct Camera make_camera_defaults(int image_width, scalar aspect_ratio) {
 	return make_camera(image_width, aspect_ratio, 1.0, 2.0, make_point(0,0,0));
+}
+
+Point sample_square() {
+	return make_point(random_scalar() - 0.5, random_scalar() - 0.5, 0);
+}
+
+Ray get_ray(struct Camera *cam, int i, int j) {
+	Point offset = sample_square();
+	Point sampled_pixel =
+		add_points(
+		add_points(
+			cam->pixel_00,
+			scale_point(j + random_scalar() - 0.5, cam->pixel_delta_h)),
+			scale_point(i + random_scalar() - 0.5, cam->pixel_delta_v));
+	return make_ray(cam->camera_center, subtract_points(sampled_pixel, cam->camera_center));
 }
 
 Color ray_color(Ray r, struct Hittable_list *world) {
@@ -109,14 +131,12 @@ void render_camera(struct Camera *cam, struct Hittable_list *world) {
 	for(int i = 0; i < cam -> image_height; i++) {
 		fprintf(log_file, "Scanline: %d\n", i);
 		for(int j = 0; j < cam -> image_width; j++) {
-			Point pixel_now = 
-				add_points(
-				add_points(
-						cam -> pixel_00,
-						scale_point(j, cam -> pixel_delta_h)),
-						scale_point(i, cam -> pixel_delta_v));
-			Ray r = make_ray(cam -> camera_center, subtract_points(pixel_now, cam -> camera_center));
-			write_color(output_file, ray_color(r, world));
+			Color pixel_color = make_point(0,0,0);
+			for (int sample = 0; sample < cam -> samples_per_pixel; sample++) {
+				Ray r = get_ray(cam, i, j);
+				pixel_color = add_points(pixel_color, ray_color(r, world));
+			}
+			write_color(output_file, scale_point(cam->sample_scale, pixel_color));
 		}
 	}
 }

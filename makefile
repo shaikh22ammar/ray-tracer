@@ -14,7 +14,7 @@ lib/sphere.o: lib/sphere.c lib/sphere.h lib/point.h lib/hittable.h lib/ray.h
 lib/ray.o: lib/ray.c lib/point.h lib/ray.h
 	clang lib/ray.c -c -o lib/ray.o
 
-lib/interval.o: lib/point.h
+lib/interval.o: lib/point.h lib/interval.c lib/interval.h
 	clang lib/interval.c -c -o lib/interval.o
 
 lib/point.o: lib/point.c lib/point.h

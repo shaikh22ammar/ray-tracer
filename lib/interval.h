@@ -11,6 +11,8 @@ int interval_contains(Interval I, scalar x);
 
 int interval_contains_strict(Interval I, scalar x);
 
+scalar interval_clamp(Interval I, scalar x);
+
 extern const Interval empty_interval;
 extern const Interval full_interval;
 extern const Interval positive_interval;
