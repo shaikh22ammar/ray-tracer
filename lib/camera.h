@@ -105,7 +105,7 @@ Color ray_color(Ray r, struct Hittable_list *world, int depth) {
 		return make_color(0,0,0);
 	struct Hit_record rec;
 	if (ray_hits_hittable_list(r, make_interval(0.001, SCALAR_MAX), (void *) world, &rec)) {
-		Vector direction = random_unit_vector_on_hemisphere(rec.normal);
+		Vector direction = add_points(rec.normal, random_unit_vector());
 		return scale_point(0.5,	
 				ray_color(
 					make_ray(rec.ray_hit_point, direction), 
