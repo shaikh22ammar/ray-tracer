@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "lib/point.h"
-#include "lib/color.h"
 #include "lib/ray.h"
 #include "lib/interval.h"
 #include "lib/hittable.h"
@@ -24,12 +23,15 @@ int main() {
 
 	// render
 	output_file = fopen("mysky.ppm", "w");
-	log_file = stdout;
+	log_file = stderr;
 	//log_file = fopen("mysky.log", "w");
 
-	struct Camera cam = make_camera_defaults(400, (scalar) 16.0/9.0);
-	render_camera(&cam, world);
+	struct Camera *cam = (struct Camera *) malloc (sizeof(struct Camera));
+	make_camera_defaults(cam, 400, (scalar) 16.0/9.0);
+	render_camera(cam, world);
 
+	free(cam -> image);
+	free(cam);
 	fclose(log_file);
 	fclose(output_file);
 	return 0;
