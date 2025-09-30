@@ -149,10 +149,6 @@ void render_camera(struct Camera *cam, struct Hittable_list *world) {
 	int H = cam -> image_width;
 	int V = cam -> image_height;
 
-//	int num_threads = sysconf(_SC_NPROCESSORS_ONLN);
-//	num_threads = num_threads < 1 ? 1 : num_threads;
-//	pthread_t *threads = (pthread_t *) malloc (num_threads * sizeof(pthread_t));
-
 	#pragma omp parallel for collapse(2) schedule(dynamic, 1)
 	for(int i = 0; i < V; i++) {
 		fprintf(log_file, "\rScanline: %d", i);
