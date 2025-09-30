@@ -1,10 +1,10 @@
-CC=gcc-15 -fopenmp
+CC=gcc-15 
 
 mysky: mysky.o lib/point.o lib/ray.o lib/sphere.o lib/hittable_list.o lib/interval.o
-	$(CC) mysky.o lib/point.o lib/ray.o lib/interval.o lib/hittable_list.o lib/sphere.o -o mysky.out 
+	$(CC) -fopenmp mysky.o lib/point.o lib/ray.o lib/interval.o lib/hittable_list.o lib/sphere.o -o mysky.out 
 
 mysky.o: mysky.c lib/color.h lib/random.h lib/camera.h lib/point.h lib/hittable.h lib/sphere.h lib/interval.h lib/ray.h
-	$(CC) mysky.c -c
+	$(CC) -fopenmp -c mysky.c 
 
 lib/hittable_list.o: lib/hittable_list.h lib/hittable_list.c lib/hittable.h lib/point.h lib/ray.h
 	$(CC) lib/hittable_list.c -c -o lib/hittable_list.o
