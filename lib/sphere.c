@@ -10,6 +10,7 @@ Sphere make_sphere(scalar radius, Point center) {
 int ray_hits_sphere(Ray r, Interval t_limit, void *sphere_void, struct Hit_record *rec) {
 	scalar a, h, c; 
 	Sphere C = *((Sphere *) sphere_void);
+
 	a = dot_product(r.direction, r.direction);
 	Point p = subtract_points(C.center, r.origin);
 	h = dot_product(r.direction, p);
@@ -24,6 +25,7 @@ int ray_hits_sphere(Ray r, Interval t_limit, void *sphere_void, struct Hit_recor
 		if (!interval_contains_strict(t_limit, root))
 			return 0;
 	}
+
 	rec -> ray_t = root;
 	rec -> ray_hit_point = point_at_ray(r, root);
 	rec -> normal = 

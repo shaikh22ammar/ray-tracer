@@ -1,5 +1,4 @@
 #include "point.h"
-#include <stdlib.h>
 #include <math.h>
 
 //struct Point {scalar x; scalar y; scalar z;};
@@ -18,6 +17,13 @@ Point add_points(Point p1, Point p2) {
 			p1.x + p2.x, 
 			p1.y + p2.y, 
 			p1.z + p2.z);
+}
+
+Point multiply_points(Point p, Point q) {
+	return make_point(
+			p.x * q.x,
+			p.y * q.y,
+			p.z * q.z);
 }
 
 Vector subtract_points(Point p1, Point p2) {
@@ -52,4 +58,8 @@ Point scale_point(scalar t, Point p) {
 
 Point unit_point(Point p) {
 	return scale_point(1.0/norm(p), p);
+}
+
+int is_close_to_zero(Point p) {
+	return dot_product(p,p) < 1e-4;
 }

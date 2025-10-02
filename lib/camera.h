@@ -2,19 +2,19 @@
 #define CAMERA_H
 
 #include <stdlib.h>
-#include "stdio.h"
+#include <omp.h>
+#include <unistd.h>
+#include <stdio.h>
+
 #include "point.h"
 #include "random.h"
 #include "color.h"
-#include <omp.h>
-//#include <pthread.h>
-#include <stdatomic.h>
-#include <unistd.h>
+#include "hittable.h"
+#include "materials.h"
 
 
 extern FILE *log_file;
 extern FILE *output_file;
-
 
 
 struct Camera {
@@ -46,7 +46,7 @@ struct Camera {
 	int max_reflection_depth;
 };
 
-void make_camera (struct Camera *cam, int image_width, scalar aspect_ratio, scalar focal_length, scalar viewport_height, Point camera_center) {
+void make_camera (struct Camera *cam, int image_width, scalar aspect_ratio, int samples, scalar focal_length, scalar viewport_height, Point camera_center) {
 	// image
 	cam -> image_width = image_width;
 	cam -> aspect_ratio = aspect_ratio;
@@ -83,46 +83,58 @@ void make_camera (struct Camera *cam, int image_width, scalar aspect_ratio, scal
 			scale_point(0.5, cam -> pixel_delta_h)),
 			scale_point(0.5, cam -> pixel_delta_v));
 
-	cam -> samples_per_pixel = 100;
+	cam -> samples_per_pixel = samples;
 	cam -> sample_scale = 1.0 / cam -> samples_per_pixel;
 	cam -> max_reflection_depth = 50;
 }
 
 
 
-void make_camera_defaults(struct Camera *cam, int image_width, scalar aspect_ratio) {
-	 make_camera(cam, image_width, aspect_ratio, 1.0, 2.0, make_point(0,0,0));
+void make_camera_defaults(struct Camera *cam, int image_width, scalar aspect_ratio, int samples) {
+	 make_camera(cam, image_width, aspect_ratio, samples, 1.0, 2.0, make_point(0,0,0));
 }
 
+// returns a random unit square around (0,0) for ray sampling
 Point sample_square() {
 	return make_point(random_scalar() - 0.5, random_scalar() - 0.5, 0);
 }
 
+/* returns the sampled ray for the (i,j)-th pixel, 
+ * it incorporates some randomness through sampled_square() */
 Ray get_ray(struct Camera *cam, int i, int j) {
 	Point offset = sample_square();
+	Point random_point = sample_square();
 	Point sampled_pixel =
 		add_points(
 		add_points(
 			cam->pixel_00,
-			scale_point(j + random_scalar() - 0.5, cam->pixel_delta_h)),
-			scale_point(i + random_scalar() - 0.5, cam->pixel_delta_v));
+			scale_point(j + random_point.x, cam->pixel_delta_h)),
+			scale_point(i + random_point.y, cam->pixel_delta_v));
 	return make_ray(cam->camera_center, subtract_points(sampled_pixel, cam->camera_center));
 }
 
+// returns the color of a ray given the list of hittables in the world through recursion
 Color ray_color(Ray r, struct Hittable_list *world, int depth) {
 	if (depth <= 0) 
 		return make_color(0,0,0);
+
 	struct Hit_record rec;
 	if (ray_hits_hittable_list(r, make_interval(0.001, SCALAR_MAX), (void *) world, &rec)) {
-		Vector direction = add_points(rec.normal, random_unit_vector());
-		return scale_point(0.5,	
-				ray_color(
-					make_ray(rec.ray_hit_point, direction), 
-					world, depth - 1));
+		Ray scattered_ray;
+		Color attenuation;
+		if ((rec.material) -> is_scattered(&rec, rec.material, &scattered_ray, &attenuation)) {
+			Color col = 
+				multiply_points(
+					attenuation,
+					ray_color(
+						scattered_ray,
+						world, depth - 1));
+			return col;
+		}
+		return make_point(0,0,0);
 	}
 	
 	// sky
-	// fprintf(log_file, "Ray has hit nothing");
 	Color blue = make_color(0.5, 0.7, 1.0);
 	Color white = make_color(1, 1, 1);
 	Vector unit_direction = unit_point(r.direction);
@@ -134,6 +146,7 @@ Color ray_color(Ray r, struct Hittable_list *world, int depth) {
 	return ray_col;
 }
 
+// gets the final sampled ray color for the (i,j)-th pixel
 Color get_sampled_ray_color(int i, int j, struct Camera *cam, struct Hittable_list *world) {
 	Color pixel_color = make_point(0,0,0);
 	for (int sample = 0; sample < cam->samples_per_pixel; sample++) {
@@ -151,7 +164,7 @@ void render_camera(struct Camera *cam, struct Hittable_list *world) {
 
 	#pragma omp parallel for collapse(2) schedule(dynamic, 1)
 	for(int i = 0; i < V; i++) {
-		fprintf(log_file, "\rScanline: %d", i);
+		fprintf(log_file, "\rProgress: %d\%", (i+1)*100/V);
 		for(int j = 0; j < H; j++) {
 			Color pixel_color = get_sampled_ray_color(i, j, cam, world);
 			(cam->image)[i*H + j] = pixel_color;

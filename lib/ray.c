@@ -1,5 +1,4 @@
 #include "ray.h"
-#include <stdlib.h>
 
 Ray make_ray(Point origin, Vector direction) {
 	Ray r = {origin, direction};

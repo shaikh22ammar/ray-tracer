@@ -16,11 +16,13 @@ typedef Point Vector;
 Point make_point(scalar x, scalar y, scalar z);
 Point negative_point(Point p);
 Point add_points(Point p1, Point p2);
+Point multiply_points(Point p, Point q);
 Vector subtract_points(Point p1, Point p2);
 Point cross_product(Point p, Point q);
 scalar dot_product(Point p, Point q);
 scalar norm(Point p);
 Point scale_point(scalar t, Point p);
 Point unit_point(Point p);
+int is_close_to_zero(Point p);
 
 #endif

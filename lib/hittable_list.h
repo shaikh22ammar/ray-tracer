@@ -1,9 +1,5 @@
 #ifndef HITTABLELIST_H
 #define HITTABLELIST_H
-#include <stdlib.h>
-#include "point.h"
-#include "ray.h"
-#include "interval.h"
 #include "hittable.h"
 
 struct Hittable_list {

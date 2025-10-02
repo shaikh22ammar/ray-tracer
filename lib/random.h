@@ -1,25 +1,10 @@
-#include <stdlib.h>
-#include <math.h>
+#ifndef RANDOM_H
+#define RANDOM_H
+
 #include "point.h"
 
-#define random_scalar() ((scalar) rand()) / (RAND_MAX + 1.0)
+scalar random_scalar();
+Vector random_unit_vector();
+Vector random_unit_vector_on_hemisphere(Vector p);
 
-Vector random_unit_vector() {
-	while(1) {
-		Vector v = make_point((rand()*2.0)/RAND_MAX - 1, (rand()*2.0)/RAND_MAX - 1, (rand()*2.0)/RAND_MAX - 1);
-		scalar len = dot_product(v,v);
-		if (len <= 1 && len > 0) {
-			len = sqrt(len);
-			if (len > 0)
-				return scale_point(1.0/len, v);
-		}
-	}
-}
-
-
-Vector random_unit_vector_on_hemisphere(Vector p) {
-	Vector v = random_unit_vector();
-	if (dot_product(v, p) >= 0)
-		return v;
-	return scale_point(-1.0, v);
-}
+#endif

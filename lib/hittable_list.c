@@ -1,4 +1,5 @@
 #include "hittable_list.h"
+#include <stdlib.h>
 
 struct Hittable_list *new_hittable_node (struct Hittable hittable_object) {
 	struct Hittable_list *new_node = (struct Hittable_list *) malloc(sizeof(struct Hittable_list));
@@ -36,6 +37,7 @@ int ray_hits_hittable_list (Ray r, Interval t_limit, void *hittable_list_void, s
 		if (current_object.hits(r, make_interval(t_limit.left, closest_so_far), current_object.shape, &temp_rec)) {
 			hit_anything = 1;
 			closest_so_far = temp_rec.ray_t;
+			temp_rec.material = current_object.material;
 			*rec = temp_rec;
 		}
 		hittable_list = hittable_list -> next; 
