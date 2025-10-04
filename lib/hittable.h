@@ -7,6 +7,7 @@
 
 /* Hit_record is a data structure that contains results of a ray hitting a hittable. */
 struct Hit_record{
+	Ray hit_ray;
 	Point ray_hit_point;
 	Vector normal;
 	scalar t;

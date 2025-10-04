@@ -27,6 +27,7 @@ static int ray_hits_sphere (struct Shape *self, Ray r, scalar t_min, scalar t_ma
 	}
 
 	rec -> t = root;
+	rec -> hit_ray = r;
 	rec -> ray_hit_point = point_at_ray(r, root);
 	rec -> normal =
 		scale_point(

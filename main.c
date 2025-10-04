@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 	// materials
 	struct Material *ground_mat = make_lambertian_material(make_color(0.8, 0.8, 0.0));
 	struct Material *center_mat = make_lambertian_material(make_color(0.1, 0.2, 0.5));
-	struct Material *left_mat = make_reflective_material(make_color(0.8, 0.8, 0.8), 0.3);
+	struct Material *left_mat = make_reflective_material(make_color(0.8, 0.8, 0.8), 0.001);
 	struct Material *right_mat = make_reflective_material(make_color(0.8, 0.6, 0.2), 1.0);
 	
 	// array
