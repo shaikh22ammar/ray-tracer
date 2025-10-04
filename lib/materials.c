@@ -70,8 +70,8 @@ static inline Vector refraction_direction (Vector in, Vector normal, scalar rela
 
 static int refractive_scatter (struct Material *self, struct Hit_record *rec) {
 	Color attenuation = {1.0, 1.0, 1.0};
-	relative_refraction_coefficient = self -> params[0];
-	relative_refraction_coefficient = dot(rec -> normal, subtract_points(rec -> hit_ray.direction, rec -> hit_ray.origin)) > 0 ? 1.0/relative_refraction_coefficient : relative_refraction_coefficient;
+	scalar relative_refraction_coefficient = self -> params[0];
+	relative_refraction_coefficient = dot_product(rec -> normal, subtract_points(rec -> hit_ray.direction, rec -> hit_ray.origin)) > 0 ? 1.0/relative_refraction_coefficient : relative_refraction_coefficient;
 }
 
 struct Material *make_lambertian_material (Color albedo) {
