@@ -1,21 +1,17 @@
 #ifndef CAMERA_H
 #define CAMERA_H
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-#include <unistd.h>
-#include <stdio.h>
-
 #include "point.h"
-#include "random.h"
 #include "color.h"
+#include "ray.h"
 #include "hittable.h"
-#include "materials.h"
+#include "random.h"
 
 
-extern FILE *log_file;
-extern FILE *output_file;
-
+FILE *output_file;
+FILE *log_file;
 
 struct Camera {
 	// image
@@ -46,7 +42,9 @@ struct Camera {
 	int max_reflection_depth;
 };
 
-void make_camera (struct Camera *cam, int image_width, scalar aspect_ratio, int samples, scalar focal_length, scalar viewport_height, Point camera_center) {
+
+struct Camera *make_camera (int image_width, scalar aspect_ratio, scalar focal_length, scalar viewport_height, Point camera_center, int samples) {
+	struct Camera *cam = (struct Camera *) malloc (sizeof(struct Camera));
 	// image
 	cam -> image_width = image_width;
 	cam -> aspect_ratio = aspect_ratio;
@@ -88,21 +86,9 @@ void make_camera (struct Camera *cam, int image_width, scalar aspect_ratio, int 
 	cam -> max_reflection_depth = 50;
 }
 
-
-
-void make_camera_defaults(struct Camera *cam, int image_width, scalar aspect_ratio, int samples) {
-	 make_camera(cam, image_width, aspect_ratio, samples, 1.0, 2.0, make_point(0,0,0));
-}
-
-// returns a random unit square around (0,0) for ray sampling
-Point sample_square() {
-	return make_point(random_scalar() - 0.5, random_scalar() - 0.5, 0);
-}
-
 /* returns the sampled ray for the (i,j)-th pixel, 
  * it incorporates some randomness through sampled_square() */
 Ray get_ray(struct Camera *cam, int i, int j) {
-	Point offset = sample_square();
 	Point random_point = sample_square();
 	Point sampled_pixel =
 		add_points(
@@ -114,29 +100,29 @@ Ray get_ray(struct Camera *cam, int i, int j) {
 }
 
 // returns the color of a ray given the list of hittables in the world through recursion
-Color ray_color(Ray r, struct Hittable_list *world, int depth) {
+Color ray_color(Ray r, struct Hittable_array world, int depth) {
 	if (depth <= 0) 
 		return make_color(0,0,0);
 
 	struct Hit_record rec;
-	if (ray_hits_hittable_list(r, make_interval(0.001, SCALAR_MAX), (void *) world, &rec)) {
-		Ray scattered_ray;
-		Color attenuation;
-		if ((rec.material) -> is_scattered(&rec, rec.material, &scattered_ray, &attenuation)) {
+	unsigned int is_scatter_hit = ray_hits_array(world, r, &rec);
+	if (is_scatter_hit) { // ray has hit
+		if (is_scatter_hit >> 1) {// ray has scatterd
 			Color col = 
 				multiply_points(
-					attenuation,
+					rec.attenuation,
 					ray_color(
-						scattered_ray,
+						rec.scattered_ray,
 						world, depth - 1));
 			return col;
 		}
+		// ray has hit but not scattered
 		return make_point(0,0,0);
 	}
 	
 	// sky
-	Color blue = make_color(0.5, 0.7, 1.0);
-	Color white = make_color(1, 1, 1);
+	Color blue = {0.5, 0.7, 1.0};
+	Color white = {1, 1, 1};
 	Vector unit_direction = unit_point(r.direction);
 	scalar y_value = (unit_direction.y + 1.0)*0.5;
 	Color ray_col = 
@@ -146,32 +132,33 @@ Color ray_color(Ray r, struct Hittable_list *world, int depth) {
 	return ray_col;
 }
 
+
 // gets the final sampled ray color for the (i,j)-th pixel
-Color get_sampled_ray_color(int i, int j, struct Camera *cam, struct Hittable_list *world) {
-	Color pixel_color = make_point(0,0,0);
+Color get_sampled_ray_color(struct Camera *cam, int i, int j, struct Hittable_array world) {
+	Color pixel_color = {0,0,0};
 	for (int sample = 0; sample < cam->samples_per_pixel; sample++) {
 		Ray r = get_ray(cam, i, j);
-		pixel_color = add_points(pixel_color, ray_color(r, world, cam->max_reflection_depth));
+		Color ray_col = ray_color(r, world, cam->max_reflection_depth);
+		pixel_color = add_points(pixel_color, ray_col); 
 	}
 	pixel_color = scale_point(cam->sample_scale, pixel_color);
 	return pixel_color;
 }
 
-void render_camera(struct Camera *cam, struct Hittable_list *world) {
-	fprintf(output_file, "P3\n%d %d\n255\n", cam -> image_width, cam -> image_height);
-	int H = cam -> image_width;
-	int V = cam -> image_height;
+void render_camera(struct Camera *cam, struct Hittable_array world) {
+	fprintf(output_file, "P6\n%d %d\n255\n", cam -> image_width, cam -> image_height);
+	int width = cam -> image_width;
+	int height = cam -> image_height;
 
 	#pragma omp parallel for collapse(2) schedule(dynamic, 1)
-	for(int i = 0; i < V; i++) {
-		fprintf(log_file, "\rProgress: %d\%", (i+1)*100/V);
-		for(int j = 0; j < H; j++) {
-			Color pixel_color = get_sampled_ray_color(i, j, cam, world);
-			(cam->image)[i*H + j] = pixel_color;
+	for(int i = 0; i < height; i++) {
+		fprintf(log_file, "\rProgress: %d\%", (i+1)*100/height);
+		for(int j = 0; j < width; j++) {
+			Color pixel_color = get_sampled_ray_color(cam, i, j, world);
+			(cam->image)[i*width + j] = pixel_color;
+			Color *image = cam->image;
 		}
 	}
-
-	write_color(output_file, cam -> image, H*V);
+	write_to_image(output_file, cam -> image, width*height);
 }
-
 #endif

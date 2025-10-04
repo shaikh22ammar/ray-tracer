@@ -1,31 +1,32 @@
-CC=gcc-15 
+CC=gcc-15 -std=c99
 
-mysky: mysky.o lib/point.o lib/ray.o lib/sphere.o lib/hittable_list.o lib/interval.o lib/random.o lib/color.o
-	$(CC) -fopenmp mysky.o lib/point.o lib/ray.o lib/interval.o lib/hittable_list.o lib/sphere.o lib/random.o lib/color.o -o mysky.out 
 
-mysky.o: mysky.c lib/color.h lib/random.h lib/camera.h lib/point.h lib/hittable.h lib/sphere.h lib/interval.h lib/ray.h lib/materials.h
-	$(CC) -fopenmp -c mysky.c -o mysky.o 
+main: main.c lib/camera.h lib/materials.o lib/random.o lib/sphere.o lib/hittable.o lib/color.o lib/ray.o lib/point.o 
+	$(CC) -fopenmp main.c lib/materials.o lib/random.o lib/sphere.o lib/hittable.o lib/color.o lib/ray.o lib/point.o -lm -o main.out
 
-lib/sphere.o: lib/sphere.c lib/sphere.h lib/point.h lib/hittable.h lib/ray.h
-	$(CC) lib/sphere.c -c -o lib/sphere.o
+test: test.c lib/color.o lib/point.o
+	$(CC) test.c lib/color.o lib/point.o -o test.out
 
-lib/hittable_list.o: lib/hittable_list.h lib/hittable_list.c lib/hittable.h lib/point.h lib/ray.h
-	$(CC) lib/hittable_list.c -c -o lib/hittable_list.o
+lib/materials.o: lib/materials.h lib/materials.c lib/point.o lib/ray.o lib/hittable.o lib/random.o
+	$(CC) -c lib/materials.c -o lib/materials.o -lm
 
-lib/color.o: lib/color.c lib/color.h lib/point.o
-	$(CC) lib/color.c -c -o lib/color.o
+lib/random.o: lib/random.h lib/random.c lib/point.o
+	$(CC) -c lib/random.c -o lib/random.o -lm
 
-lib/random.o: lib/point.o
-	$(CC) -lm lib/random.c -c -o lib/random.o
+lib/sphere.o: lib/sphere.h lib/sphere.c lib/hittable.o
+	$(CC) -c lib/sphere.c -o lib/sphere.o -lm
 
-lib/interval.o: lib/point.h lib/interval.c lib/interval.h
-	$(CC) lib/interval.c -c -o lib/interval.o
+lib/hittable.o: lib/hittable.h lib/hittable.c lib/ray.o lib/point.o
+	$(CC) -c lib/hittable.c -o lib/hittable.o
 
-lib/ray.o: lib/ray.c lib/point.h lib/ray.h
-	$(CC) lib/ray.c -c -o lib/ray.o
+lib/color.o: lib/color.h lib/color.c lib/point.o
+	$(CC) -c lib/color.c -o lib/color.o -lm
 
-lib/point.o: lib/point.c lib/point.h
-	$(CC) lib/point.c -c -o lib/point.o
+lib/ray.o: lib/ray.h lib/ray.c lib/point.o
+	$(CC) -c lib/ray.c -o lib/ray.o
+
+lib/point.o: lib/point.h lib/point.c
+	$(CC) -c lib/point.c -o lib/point.o -lm
 
 clean:
 	rm *.o; rm lib/*.o

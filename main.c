@@ -1,0 +1,57 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+#include "lib/point.h"
+#include "lib/hittable.h"
+#include "lib/sphere.h"
+#include "lib/materials.h"
+#include "lib/camera.h"
+
+FILE *log_file;
+FILE *output_file;
+
+int main(int argc, char *argv[]) {
+	// hittable world list
+
+	// shapes
+	struct Shape *blue_ball_shape = make_sphere_shape(0.5, make_point(0,0,-1.2));
+	struct Shape *ground_shape = make_sphere_shape(100, make_point(0,-100.5,-1));
+	struct Shape *left_ball_shape = make_sphere_shape(0.5, make_point(-1,0,-1));
+	struct Shape *right_ball_shape = make_sphere_shape(0.5, make_point(1,0,-1));
+
+	// materials
+	struct Material *ground_mat = make_lambertian_material(make_color(0.8, 0.8, 0.0));
+	struct Material *center_mat = make_lambertian_material(make_color(0.1, 0.2, 0.5));
+	struct Material *left_mat = make_reflective_material(make_color(0.8, 0.8, 0.8), 0.3);
+	struct Material *right_mat = make_reflective_material(make_color(0.8, 0.6, 0.2), 1.0);
+	
+	// array
+	struct Hittable *first = (struct Hittable *) malloc (sizeof(struct Hittable)*2);
+	first[0] = (struct Hittable) {blue_ball_shape, center_mat};
+	first[1] = (struct Hittable) {left_ball_shape, left_mat};
+	first[2] = (struct Hittable) {right_ball_shape, right_mat};
+	first[3] = (struct Hittable) {ground_shape, ground_mat};
+
+	struct Hittable_array world = {first, 4};
+
+
+
+
+
+	// render
+	output_file = fopen("main.ppm", "w");
+	log_file = stderr;
+
+	int width = argc > 1 ? atoi(argv[1]) : 400;
+	scalar aspect_ratio = argc > 3 ? ((scalar) atoi(argv[2])) / atoi(argv[3]) : (scalar) 16.0 / 9.0;
+	int samples = argc > 4 ? atoi(argv[4]) : 100;
+
+	struct Camera *cam = make_camera(width, aspect_ratio, 1.0, 2.0, make_point(0,0,0), samples);
+	render_camera(cam, world);
+
+	free(cam -> image);
+	free(cam);
+	fclose(log_file);
+	fclose(output_file);
+	return 0;
+}

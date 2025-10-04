@@ -1,22 +1,15 @@
-#define CONVERSION_FACTOR 255.999
-#include <stdio.h>
-#include "interval.h"
-#include "math.h"
 #include "color.h"
 
-#define linear_to_gamma(x) x > 0 ? sqrt(x) : 0;
+extern Color linear_to_gamma(Color linear_col);
 
-void write_color(FILE *output, Color *image, int N) {
-	Interval clamper = make_interval(0, 0.999);
-	for (int i = 0; i < N; i++) {
-		Color p = image[i];
-		p.x = linear_to_gamma(p.x);
-		p.y = linear_to_gamma(p.y);
-		p.z = linear_to_gamma(p.z);
-		int red   = (int) (interval_clamp(clamper, p.x) * 256);
-		int green = (int) (interval_clamp(clamper, p.y) * 256);
-		int blue  = (int) (interval_clamp(clamper, p.z) * 256);
-		fprintf(output, "%d %d %d\n", red, green, blue);
-	}
+extern struct Binary_color color_to_binary(Color col);
+
+void write_to_image(FILE *file, Color *image, int length) {
+	for (int i = 0; i < length; i++) {
+		Color corrected_color = linear_to_gamma(image[i]);
+		struct Binary_color color_bin = color_to_binary(corrected_color);
+		fputc(color_bin.red, file);
+		fputc(color_bin.green, file);
+		fputc(color_bin.blue, file);
+	}	
 }
-
